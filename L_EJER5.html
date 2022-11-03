@@ -1,0 +1,197 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>EJERCICIO L_5</title>
+
+    <!--GJSON-->
+    <script type="text/javascript" src="./Paises_Mundo.js"></script>
+    <script type="text/javascript" src="./Departamentos_Colombia.js"></script>
+    <script type="text/javascript" src="./Ciudades_Mundo.js"></script>
+
+    <!--LEAFLET-->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.3.1/dist/leaflet.css"
+        integrity="sha512-Rksm5RenBEKSKFjgI3a41vrjkw4EVPlJ3+OiI65vTjIdo9brlAacEuKOiQ5OFh7cOI1bkDwLqdLw3Zg0cRJAAQ=="
+        crossorigin="" />
+    <script src="https://unpkg.com/leaflet@1.3.1/dist/leaflet.js"
+        integrity="sha512-/Nsx9X4HebavoBvEBuyp3I7od5tA0UzAxs+j83KgC8PU0kgB4XiK4Lfe4y4cgBtaRJQEIFCW+oC506aPT2L1zw=="
+        crossorigin=""></script>
+
+    <!--PLUGIN-->
+    <!--   PLUGIN MARKER CLUSTER-->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.3.0/dist/MarkerCluster.css" />
+    <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.3.0/dist/MarkerCluster.Default.css" />
+    <script src="https://unpkg.com/leaflet.markercluster@1.3.0/dist/leaflet.markercluster.js"></script>
+
+    <!--   PLUGIN MINIMAP-->
+    <link rel="stylesheet" href="./Leaflet-MiniMap-master/src/Control.MiniMap.css" />
+    <script src="./Leaflet-MiniMap-master/src/Control.MiniMap.js" type="text/javascript"></script>
+
+
+    <style>
+        #map {
+            width: 100%;
+            height: 620px;
+            box-shadow: 5px 5px 5px #888;
+        }
+
+        .info {
+            padding: 6px 8px;
+            font: 14px/16px Arial, Helvetica, sans-serif;
+            background: white;
+            background: rgba(255, 255, 255, 0.8);
+            box-shadow: 0 0 15px rgba(0, 0, 0, 0.2);
+            border-radius: 5px;
+        }
+
+        .info h2 {
+            margin: 0 0 5px;
+            color: #777;
+        }
+
+        .legend {
+            opacity: 0.7;
+        }
+    </style>
+</head>
+
+<body>
+    <div id="map">
+
+        <script>
+            var markers = L.markerClusterGroup();
+
+            var OSM = new L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                attribution: '&copy; <a href="http://osm.org/copyright">OpenStreetMap</a>'
+                    + 'contributors', maxZoom: 19
+            });
+
+            var OSMMIN = new L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                attribution: '&copy; <a href="http://osm.org/copyright">OpenStreetMap</a>'
+                    + 'contributors', minZoom: 0, maxZoom: 13
+            });
+
+            function getColorPaises(pais) {
+                return pais > 100000000 ? '#800026' :
+                    pais > 50000000 ? '#BD0026' :
+                        pais > 20000000 ? '#E31A1C' :
+                            pais > 10000000 ? '#FC4E2A' :
+                                pais > 5000000 ? '#FD8D3C' :
+                                    pais > 2000000 ? '#FEB24C' :
+                                        pais > 1000000 ? '#FED976' :
+                                            '#FFEDA0';
+            };
+
+            function getColorDepartamento(depar) {
+                return depar > 71289257358 ? '#FFCD02' :
+                        depar > 59575066797 ? '#41FF4A' :
+                            depar > 31468838933 ? '#32F1A0' :
+                                '#C1FF00';
+            };
+
+            function getColorCiudades(ciud) {
+                return ciud == 'S' ? '#0027FF' :
+                    ciud == 'N' ? '#FF0000' :
+                        '#FFFFFF';
+            };
+
+            function estilopaises(feature) {
+                return {
+                    fillColor: getColorPaises(feature.properties.pop_est),
+                    weight: 2,
+                    opacity: 1,
+                    color: 'white',
+                    dashArray: '1',
+                    fillOpacity: 0.3
+                };
+            }
+
+            function popuPaises(feature, layer) {
+                if (feature.properties && feature.properties.name) {
+                    layer.bindPopup("Nombre Pais: " + feature.properties.name + "<br>" +
+                    "Cantidad Poblacion: " + feature.properties.pop_est);
+                }
+            }
+
+            function estiloDepartamento(feature) {
+                return {
+                    fillColor: getColorDepartamento(feature.properties.SHAPE_AREA),
+                    weight: 2,
+                    opacity: 1,
+                    color: '#5E5E5E',
+                    dashArray: '1',
+                    fillOpacity: 0.4
+                };
+            }
+
+            function popupDepartamento(feature, layer) {
+                if (feature.properties && feature.properties.NOM_DEPART) {
+                    layer.bindPopup("Nombre Departamento: " + feature.properties.NOM_DEPART);
+                }
+            }
+
+            var title = L.control();
+            title.onAdd = function (map) {
+                var div = L.DomUtil.create('div', 'info');
+                div.innerHTML +=
+                    '<h2>EJERCICIO 5 LEAFLET</h2>CAPAS';
+                return div;
+            };
+
+            var map = L.map("map", {
+                center: [1.6181058937930153, -75.6095327486994],
+                layers: [OSM],
+                zoom: 4,
+                scrollWheelZoom: true,
+            });
+
+            var Paises_Mundo = L.geoJson(paises_mundo, {
+                style: estilopaises,
+                onEachFeature: popuPaises
+            }).addTo(map);
+
+            var Departamentos_Col = L.geoJson(departamentos_colombia, {
+                style: estiloDepartamento,
+                onEachFeature: popupDepartamento
+            }).addTo(map);
+
+            var Ciudades = L.geoJSON(ciudades_mundo, {
+                pointToLayer: function (feature, latlng) {
+                    return markers.addLayer(L.circleMarker(latlng, {
+                        radius: 8,
+                        fillColor: getColorCiudades(feature.properties.CAPITAL),
+                        weight: 1,
+                        opacity: 0,
+                        color: 'black',
+                        fillOpacity: 1
+                    }).bindPopup("Pais: " + feature.properties.PAIS + "<br>" +
+                    "Nombre Ciudad: " + feature.properties.CIUDAD + "<br>" + 
+                    "Es capital: " + feature.properties.CAPITAL + "<br>" +
+                    "Coordenadas: " + feature.geometry.coordinates))
+                },
+            }).addTo(map);
+
+            map.addLayer(markers);
+
+            var miniMap = new L.Control.MiniMap(OSMMIN, { toggleDisplay: true }).addTo(map);
+
+            var baseMaps = {
+                "OpenStreetMap": OSM
+            };
+            var overlayMaps = {
+                "<img src = 'https://static8.depositphotos.com/1000128/808/i/600/depositphotos_8088941-stock-photo-globe-with-world-flags.jpg' height=15px, width=15px/> Paises": Paises_Mundo,
+                "<img src = 'https://img.freepik.com/vector-premium/isometrica-3d-edificio-icono-vector_95561-31.jpg?w=740' height=15px, width=15px/> Departamento": Departamentos_Col,
+                "<img src='http://mappinggis.com/webmapping/city.png'/> Ciudades": Ciudades,
+            };
+
+            L.control.scale({ position: 'topright', imperial: false }).addTo(map);
+            title.addTo(map);
+            L.control.layers(baseMaps, overlayMaps, { collapsed: false }).addTo(map);
+        </script>
+    </div>
+</body>
+
+</html>
